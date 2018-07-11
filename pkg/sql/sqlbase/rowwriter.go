@@ -1107,7 +1107,7 @@ func (rd *RowDeleter) DeleteRow(
 		}
 	}
 	if checkFKs == CheckFKs {
-		rd.Fks.checkAll(ctx, values)
+		rd.Fks.addAllIdxChecks(ctx, values)
 		return rd.Fks.checker.runCheck(ctx, values, nil)
 	}
 	return nil
@@ -1118,7 +1118,7 @@ func (rd *RowDeleter) DeleteRow(
 func (rd *RowDeleter) DeleteIndexRow(
 	ctx context.Context, b *client.Batch, idx *IndexDescriptor, values []tree.Datum, traceKV bool,
 ) error {
-	if err := rd.Fks.checkAll(ctx, values); err != nil {
+	if err := rd.Fks.addAllIdxChecks(ctx, values); err != nil {
 		return err
 	}
 	secondaryIndexEntry, err := EncodeSecondaryIndex(
