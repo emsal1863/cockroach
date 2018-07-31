@@ -171,6 +171,7 @@ Outer:
 	return &cascader{
 		txn:                txn,
 		tablesByID:         tablesByID,
+		fkHelper:           fkHelper,
 		indexPKRowFetchers: make(map[ID]map[IndexID]RowFetcher),
 		rowDeleters:        make(map[ID]RowDeleter),
 		deleterRowFetchers: make(map[ID]RowFetcher),
@@ -1137,6 +1138,9 @@ func (c *cascader) cascadeAll(
 			// If there's only a single change, which is quite often the case, there
 			// is no need to worry about intermediate states.  Just run the check and
 			// avoid a bunch of allocations.
+			if err := c.fkHelper.AddChecks(ctx, *c.tablesByID[tableID].Table, rowUpdater.FetchColIDtoRowIndex, CheckUpdates, originalRows.At(0), updatedRows.At(0)); err != nil {
+				return err
+			}
 			if err := rowUpdater.Fks.addIndexChecks(ctx, originalRows.At(0), updatedRows.At(0)); err != nil {
 				return err
 			}
@@ -1176,6 +1180,9 @@ func (c *cascader) cascadeAll(
 					finalRow = updatedRows.At(j)
 					skipList[j] = struct{}{}
 				}
+			}
+			if err := c.fkHelper.AddChecks(ctx, *c.tablesByID[tableID].Table, rowUpdater.FetchColIDtoRowIndex, CheckUpdates, originalRows.At(0), updatedRows.At(0)); err != nil {
+				return err
 			}
 			if err := rowUpdater.Fks.addIndexChecks(ctx, originalRows.At(i), finalRow); err != nil {
 				return err

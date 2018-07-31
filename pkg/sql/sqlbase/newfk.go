@@ -267,6 +267,13 @@ func (fk *FKHelper) getSpans(row tree.Datums, tableID ID, dir FKCheck) ([]roachp
 // AddChecks prepares all the checks for a particular row.
 func (fk *FKHelper) AddChecks(ctx context.Context, table TableDescriptor, colMap map[ColumnID]int, dir FKCheck, oldRow tree.Datums, newRow tree.Datums) error {
 
+	if dir == CheckUpdates {
+		if err := fk.AddChecks(ctx, table, colMap, CheckInserts, nil, newRow); err != nil {
+			return err
+		}
+		return fk.AddChecks(ctx, table, colMap, CheckDeletes, oldRow, nil)
+	}
+
 	tableID := table.ID
 	fk.initializeTableInfo(table, colMap, dir)
 
@@ -278,9 +285,10 @@ func (fk *FKHelper) AddChecks(ctx context.Context, table TableDescriptor, colMap
 		oldRowIdx = fk.writeTables[tableID].oldRows.Len() - 1
 	}
 	if newRow != nil {
-		fk.writeTables[tableID].newRows.AddRow(ctx, oldRow)
+		fk.writeTables[tableID].newRows.AddRow(ctx, newRow)
 		newRowIdx = fk.writeTables[tableID].newRows.Len() - 1
 	}
+
 	spans, indexesInfo, err := fk.getSpans(oldRow, table.ID, dir)
 	if err != nil {
 		return err

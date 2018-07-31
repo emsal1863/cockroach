@@ -47,11 +47,16 @@ func (tu *tableUpdater) rowForUpdate(
 	ctx context.Context, oldValues, updateValues tree.Datums, traceKV bool,
 ) (tree.Datums, error) {
 	tu.batchSize++
+	if err := tu.ru.FKHelper.AddChecks(ctx, *tu.tableDesc(), tu.ru.FetchColIDtoRowIndex, sqlbase.CheckUpdates, oldValues, updateValues); err != nil {
+		return nil, err
+	}
 	return tu.ru.UpdateRow(ctx, tu.b, oldValues, updateValues, sqlbase.CheckFKs, traceKV)
 }
 
 // atBatchEnd is part of the extendedTableWriter interface.
-func (tu *tableUpdater) atBatchEnd(_ context.Context, _ bool) error { return nil }
+func (tu *tableUpdater) atBatchEnd(ctx context.Context, _ bool) error {
+	return tu.ru.FKHelper.RunChecks(ctx)
+}
 
 // flushAndStartNewBatch is part of the extendedTableWriter interface.
 func (tu *tableUpdater) flushAndStartNewBatch(ctx context.Context) error {
@@ -76,7 +81,9 @@ func (tu *tableUpdater) fkSpanCollector() sqlbase.FkSpanCollector {
 }
 
 // close is part of the tableWriter interface.
-func (tu *tableUpdater) close(_ context.Context) {}
+func (tu *tableUpdater) close(ctx context.Context) {
+	tu.ru.FKHelper.Shutdown(ctx)
+}
 
 // walkExprs is part of the tableWriter interface.
 func (tu *tableUpdater) walkExprs(_ func(desc string, index int, expr tree.TypedExpr)) {}

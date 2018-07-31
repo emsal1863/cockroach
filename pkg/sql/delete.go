@@ -170,7 +170,7 @@ func (p *planner) Delete(
 		source:  rows,
 		columns: columns,
 		run: deleteRun{
-			td:         tableDeleter{rd: rd, alloc: &p.alloc, fkHelper: fkHelper},
+			td:         tableDeleter{rd: rd, alloc: &p.alloc},
 			rowsNeeded: rowsNeeded,
 		},
 	}

@@ -477,7 +477,7 @@ func (ri *RowInserter) EncodeIndexesForRow(
 type RowUpdater struct {
 	Helper                rowHelper
 	DeleteHelper          *rowHelper
-	fkHelper              FKHelper
+	FKHelper              FKHelper
 	FetchCols             []ColumnDescriptor
 	FetchColIDtoRowIndex  map[ColumnID]int
 	UpdateCols            []ColumnDescriptor
@@ -538,7 +538,7 @@ func MakeRowUpdater(
 	if err != nil {
 		return RowUpdater{}, err
 	}
-	rowUpdater.fkHelper = fkHelper
+	rowUpdater.FKHelper = fkHelper
 	rowUpdater.cascader, err = makeUpdateCascader(
 		txn, tableDesc, fkHelper, fkTables, updateCols, evalCtx, alloc,
 	)
@@ -823,7 +823,7 @@ func (ru *RowUpdater) UpdateRow(
 			}
 		}
 
-		if checkFKs == CheckFKs {
+		/*if checkFKs == CheckFKs {
 			if err := ru.Fks.addIndexChecks(ctx, oldValues, ru.newValues); err != nil {
 				return nil, err
 			}
@@ -833,7 +833,7 @@ func (ru *RowUpdater) UpdateRow(
 			if err := ru.Fks.checker.runCheck(ctx, oldValues, ru.newValues); err != nil {
 				return nil, err
 			}
-		}
+		}*/
 
 		return ru.newValues, nil
 	}
