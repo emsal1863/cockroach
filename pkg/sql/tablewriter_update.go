@@ -20,6 +20,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/internal/client"
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/cockroachdb/cockroach/pkg/sql/sqlbase"
+	"github.com/cockroachdb/cockroach/pkg/util/log"
 )
 
 // tableUpdater handles writing kvs and forming table rows for updates.
@@ -47,7 +48,13 @@ func (tu *tableUpdater) rowForUpdate(
 	ctx context.Context, oldValues, updateValues tree.Datums, traceKV bool,
 ) (tree.Datums, error) {
 	tu.batchSize++
-	if err := tu.ru.FKHelper.AddChecks(ctx, *tu.tableDesc(), tu.ru.FetchColIDtoRowIndex, sqlbase.CheckUpdates, oldValues, updateValues); err != nil {
+	newValues := make(tree.Datums, len(oldValues))
+	copy(newValues, oldValues)
+	for i, updateCol := range tu.ru.UpdateCols {
+		newValues[tu.ru.FetchColIDtoRowIndex[updateCol.ID]] = updateValues[i]
+	}
+	log.Warningf(ctx, "len(oldValues) = %d, len(newValues) = %d, len(tu.ru.FetchColIDtoRowIndex) = %d", len(oldValues), len(newValues), len(tu.ru.FetchColIDtoRowIndex))
+	if err := tu.ru.FKHelper.AddChecks(ctx, *tu.tableDesc(), tu.ru.FetchColIDtoRowIndex, sqlbase.CheckUpdates, oldValues, newValues); err != nil {
 		return nil, err
 	}
 	return tu.ru.UpdateRow(ctx, tu.b, oldValues, updateValues, sqlbase.CheckFKs, traceKV)

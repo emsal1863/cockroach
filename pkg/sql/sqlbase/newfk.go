@@ -268,10 +268,10 @@ func (fk *FKHelper) getSpans(row tree.Datums, tableID ID, dir FKCheck) ([]roachp
 func (fk *FKHelper) AddChecks(ctx context.Context, table TableDescriptor, colMap map[ColumnID]int, dir FKCheck, oldRow tree.Datums, newRow tree.Datums) error {
 
 	if dir == CheckUpdates {
-		if err := fk.AddChecks(ctx, table, colMap, CheckInserts, nil, newRow); err != nil {
+		if err := fk.AddChecks(ctx, table, colMap, CheckInserts, oldRow, newRow); err != nil {
 			return err
 		}
-		return fk.AddChecks(ctx, table, colMap, CheckDeletes, oldRow, nil)
+		return fk.AddChecks(ctx, table, colMap, CheckDeletes, oldRow, newRow)
 	}
 
 	tableID := table.ID
@@ -330,6 +330,7 @@ func (fk *FKHelper) Shutdown(ctx context.Context) {
 
 // RunChecks runs all accumulated checks.
 func (fk *FKHelper) RunChecks(ctx context.Context) error {
+	log.Warning(ctx, "starting RunChecks")
 	if len(fk.batch.Requests) == 0 {
 		return nil
 	}
@@ -355,6 +356,7 @@ func (fk *FKHelper) RunChecks(ctx context.Context) error {
 		writeIdx := fk.writeTables[writeTableID].writeIdxs[writeIdxID].idx
 
 		searchIdx := indexLookup.idx
+		log.Warningf(ctx, "tableID := %d, indexID := %d, searchIdx = %s, dir = %s", tableID, indexID, searchIdx, dir)
 		rf := indexLookup.rowFetcher
 		prefixLen := indexLookup.prefixLen
 		colIDToRowIdx := indexLookup.colIDToRowIdx

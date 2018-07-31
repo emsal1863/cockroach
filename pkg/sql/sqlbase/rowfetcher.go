@@ -538,6 +538,9 @@ func (rf *RowFetcher) NextKey(ctx context.Context) (rowDone bool, err error) {
 		// secondary index as secondary indexes have only one key per row.
 		// If rf.rowReadyTable differs from rf.currentTable, this denotes
 		// a row is ready for output.
+		//log.Warningf(context.TODO(), "rf.currentTable = %s", rf.currentTable)
+		//log.Warningf(context.TODO(), "rf.currentTable.isSecondaryIndex = %t", rf.currentTable.isSecondaryIndex)
+		//log.Warningf(context.TODO(), "rf.rowReadyTable = %s", rf.rowReadyTable)
 		switch {
 		case rf.currentTable.isSecondaryIndex:
 			// Secondary indexes have only one key per row.
